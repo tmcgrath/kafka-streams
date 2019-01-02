@@ -12,18 +12,18 @@ object WordCount extends App {
 
   val props: Properties = {
     val p = new Properties()
-    p.put(StreamsConfig.APPLICATION_ID_CONFIG, "wordcount-application")
+    p.put(StreamsConfig.APPLICATION_ID_CONFIG, "wordcount-modified")
     p.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
     p
   }
 
   val builder: StreamsBuilder = new StreamsBuilder
-  val textLines: KStream[String, String] = builder.stream[String, String]("TextLinesTopic")
+  val textLines: KStream[String, String] = builder.stream[String, String]("text_lines")
   val wordCounts: KTable[String, Long] = textLines
     .flatMapValues(textLine => textLine.toLowerCase.split("\\W+"))
     .groupBy((_, word) => word)
     .count()
-  wordCounts.toStream.to("WordsWithCountsTopic")
+  wordCounts.toStream.to("word_count_results")
 
   val streams: KafkaStreams = new KafkaStreams(builder.build(), props)
   streams.start()

@@ -3,6 +3,7 @@ name := "kafka-streams-sandbox"
 version := "0.1"
 
 scalaVersion := "2.11.11"
+scalacOptions := Seq("-Xexperimental", "-unchecked", "-deprecation")
 
 //fork in run := true
 javaOptions in run ++= Seq(
@@ -15,3 +16,7 @@ libraryDependencies += "org.apache.kafka" %% "kafka-streams-scala" % "2.1.0"
 val logback = "1.2.3"
 libraryDependencies += "ch.qos.logback" % "logback-core" % logback
 libraryDependencies += "ch.qos.logback" % "logback-classic" % logback
+
+
+libraryDependencies += "org.apache.kafka" % "kafka-streams-test-utils" % "2.1.0" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"

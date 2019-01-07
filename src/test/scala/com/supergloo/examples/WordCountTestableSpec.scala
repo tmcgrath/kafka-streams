@@ -16,7 +16,7 @@ class WordCountTestableSpec extends FlatSpec with Matchers with KafkaTestSetup {
   "Convert streaming data into lowercase and publish into output topic" should "push lower text to kafka" in {
     val driver = new TopologyTestDriver(wordCountApplication.toLowerCaseStream("input-topic", "output-topic"), config)
     val recordFactory = new ConsumerRecordFactory("input-topic", new StringSerializer(), new StringSerializer())
-    val words = "Hello, world world test"
+    val words = "Hello, WORLDY, World worlD Test"
     driver.pipeInput(recordFactory.create(words))
     val record: ProducerRecord[String, String] = driver.readOutput("output-topic", stringDeserializer, stringDeserializer)
     record.value() shouldBe words.toLowerCase

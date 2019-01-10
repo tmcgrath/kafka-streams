@@ -1,9 +1,8 @@
 package com.supergloo.examples
 
 import com.supergloo.WordCountTestable
-
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializer}
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.test.ConsumerRecordFactory
@@ -18,7 +17,7 @@ class WordCountTestableSpec extends FlatSpec with Matchers with KafkaTestSetup {
     val recordFactory = new ConsumerRecordFactory("input-topic", new StringSerializer(), new StringSerializer())
     val words = "Hello, WORLDY, World worlD Test"
     driver.pipeInput(recordFactory.create(words))
-    val record: ProducerRecord[String, String] = driver.readOutput("output-topic", stringDeserializer, stringDeserializer)
+    val record: ProducerRecord[String, String] = driver.readOutput("output-topic", new StringDeserializer(), new StringDeserializer())
     record.value() shouldBe words.toLowerCase
     driver.close()
   }

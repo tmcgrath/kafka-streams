@@ -6,8 +6,6 @@ import org.apache.kafka.common.serialization._
 import org.apache.kafka.streams.StreamsConfig
 
 trait KafkaTestSetup {
-  protected val stringDeserializer = new StringDeserializer()
-  protected val longDeserializer = new LongDeserializer()
   val config = new Properties()
   config.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, "testing")
   config.setProperty(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "testing:1234")

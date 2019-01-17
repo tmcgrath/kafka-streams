@@ -26,58 +26,65 @@ object KafkaStreamsJoins {
     val builder: StreamsBuilder = new StreamsBuilder
 
     val userRegions: KTable[String, String] = builder.table(inputTopic1)
-    val userLastLogins: KTable[String, Long] = builder.table(inputTopic2)
+    val regionMetrics: KTable[String, Long] = builder.table(inputTopic2)
 
-    userRegions.join(userLastLogins,
-      Materialized.as(storeName))((regionValue, lastLoginValue) => regionValue + "/" + lastLoginValue)
+    userRegions.join(regionMetrics,
+      Materialized.as(storeName))((regionValue, metricValue) => regionValue + "/" + metricValue)
 
     builder.build()
   }
 
-  def kTableToKTableJoinOrig(inputTopic1: String,
+  def kTableToKTableLeftJoin(inputTopic1: String,
                          inputTopic2: String,
                          storeName: String): Topology = {
 
     val builder: StreamsBuilder = new StreamsBuilder
-//    val textLines: KStream[String, String] = builder.stream[String, String](inputTopic)
 
     val userRegions: KTable[String, String] = builder.table(inputTopic1)
-    val userLastLogins: KTable[String, Long] = builder.table(inputTopic2)
+    val regionMetrics: KTable[String, Long] = builder.table(inputTopic2)
 
-//    val wordCounts: KTable[String, Long] = textLines
-//      .flatMapValues(textLine => textLine.toLowerCase.split("\\W+"))
-//      .groupBy((_, word) => word)
-//      .count()(Materialized.as("counts-store"))
+    userRegions.leftJoin(regionMetrics,
+      Materialized.as(storeName))((regionValue, metricValue) => regionValue + "/" + metricValue)
 
-//    *     userRegions.join(userLastLogins,
-//      * (regionValue, lastLoginValue) -> regionValue + "/" + lastLoginValue,
-//      *         Materialized.as(storeName))
-//    * .toStream()
-//    * .to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
-
-    userRegions.join(userLastLogins,
-      Materialized.as(storeName))((regionValue, lastLoginValue) => regionValue + "/" + lastLoginValue)
-
-//    val joey: KStream[String, String] = userRegions.leftJoin((userLastLogins)((regionValue, lastLoginValue) => regionValue + "/" + lastLoginValue)
-//      userRegions.join(userLastLogins, Materialized.as(storeName))((regionValue, lastLoginValue) => regionValue + "/" + lastLoginValue)
-
-//    ((regionValue, lastLoginValue) => regionValue + "/" + lastLoginValue)
-
-
-//    wordCounts.toStream.to(outputTopic)
     builder.build()
   }
 
-  /**
-    * final StreamsBuilder builder = new StreamsBuilder();
-    * final KTable<String, String> userRegions = builder.table(userRegionTopic);
-    * final KTable<String, Long> userLastLogins = builder.table(userLastLoginTopic, Consumed.with(stringSerde, longSerde));
-    *
-    * final String storeName = "joined-store";
-    *     userRegions.join(userLastLogins,
-    * (regionValue, lastLoginValue) -> regionValue + "/" + lastLoginValue,
-    *         Materialized.as(storeName))
-    * .toStream()
-    * .to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
-    */
+  def kTableToKTableOuterJoin(inputTopic1: String,
+                             inputTopic2: String,
+                             storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: KTable[String, String] = builder.table(inputTopic1)
+    val regionMetrics: KTable[String, Long] = builder.table(inputTopic2)
+
+    userRegions.outerJoin(regionMetrics,
+      Materialized.as(storeName))((regionValue, metricValue) => regionValue + "/" + metricValue)
+
+    builder.build()
+  }
+
+  def kStreamToKTableJoin(inputTopic1: String,
+                          inputTopic2: String,
+                          outputTopicName: String,
+                          storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: KTable[String, String] = builder.table(inputTopic1)
+    val regionMetrics: KStream[String, Long] = builder.stream(inputTopic2)
+
+    regionMetrics.join(userRegions){(regionValue, metricValue) =>
+      regionValue + "/" + metricValue
+    }.to(outputTopicName)
+
+    val outputTopic: KTable[String, String] =
+      builder.table(
+        outputTopicName,
+        Materialized.as(storeName)
+      )
+
+    builder.build()
+  }
+
 }

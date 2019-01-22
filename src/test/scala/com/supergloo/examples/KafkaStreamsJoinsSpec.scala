@@ -225,6 +225,53 @@ class KafkaStreamsJoinsSpec extends FlatSpec with Matchers with KafkaTestSetup {
   }
 
   // -------  KStream to GlobalKTable Joins ------------ //
-}
-// TODO
+  // Expect results are the same as KStream to KTable examples
+  "KStream to GlobalKTable inner join" should "save expected results to state store" in {
 
+    val driver = new TopologyTestDriver(
+      KafkaStreamsJoins.kStreamToGlobalKTableJoin(inputTopicOne,
+        inputTopicTwo,
+        outputTopic, stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+    driver.pipeInput(recordFactoryTwo.create(inputTopicTwo, sensorMetric))
+
+    // Perform tests
+    val store: KeyValueStore[String, String] = driver.getKeyValueStore(stateStore)
+
+    store.get("sensor-1") shouldBe "99/MN"
+    store.get("sensor-3-in-topic-one") shouldBe null
+    store.get("sensor-99-in-topic-two") shouldBe null
+
+    driver.close()
+  }
+
+  "KStream to GlobalKTable left join" should "save expected results to state store" in {
+
+    val driver = new TopologyTestDriver(
+      KafkaStreamsJoins.kStreamToGlobalKTableLeftJoin(inputTopicOne,
+        inputTopicTwo,
+        outputTopic, stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+    driver.pipeInput(recordFactoryTwo.create(inputTopicTwo, sensorMetric))
+
+    // Perform tests
+    val store: KeyValueStore[String, String] = driver.getKeyValueStore(stateStore)
+
+    store.get("sensor-1") shouldBe "99/MN"
+    store.get("sensor-3-in-topic-one") shouldBe null
+    store.get("sensor-99-in-topic-two") shouldBe "1/null"
+    store.get("sensor-100-in-topic-two") shouldBe "100/null"
+
+    driver.close()
+  }
+
+  // KStream to GlobalKTable outer join is not supported
+
+
+}

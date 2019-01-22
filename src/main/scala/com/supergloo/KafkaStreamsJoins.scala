@@ -5,7 +5,7 @@ import java.util.Properties
 import java.util.concurrent.TimeUnit
 
 import org.apache.kafka.streams.{StreamsConfig, Topology}
-import org.apache.kafka.streams.kstream.{JoinWindows, Materialized}
+import org.apache.kafka.streams.kstream.{GlobalKTable, JoinWindows, Materialized}
 import org.apache.kafka.streams.scala.ImplicitConversions._
 import org.apache.kafka.streams.scala.{Serdes, StreamsBuilder}
 import org.apache.kafka.streams.scala.kstream.{KStream, KTable}
@@ -194,5 +194,64 @@ object KafkaStreamsJoins {
       )
 
     builder.build()
+  }
+
+  // -------- KStream to GlobalKTable joins ------------//
+
+  def kStreamToGlobalKTableJoin(inputTopic1: String,
+                           inputTopic2: String,
+                           outputTopicName: String,
+                           storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: GlobalKTable[String, String] = builder.globalTable(inputTopic1)
+    val regionMetrics: KStream[String, Long] = builder.stream(inputTopic2)
+
+    regionMetrics.join(userRegions)(
+      (lk, rk) => lk,
+      ((regionValue, metricValue) => regionValue + "/" + metricValue)
+    ).to(outputTopicName)
+
+    val outputTopic: KTable[String, String] =
+      builder.table(
+        outputTopicName,
+        Materialized.as(storeName)
+      )
+
+    builder.build()
+  }
+
+  def kStreamToGlobalKTableLeftJoin(inputTopic1: String,
+                                inputTopic2: String,
+                                outputTopicName: String,
+                                storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: GlobalKTable[String, String] = builder.globalTable(inputTopic1)
+    val regionMetrics: KStream[String, Long] = builder.stream(inputTopic2)
+
+    regionMetrics.leftJoin(userRegions)(
+      (lk, rk) => lk,
+      ((regionValue, metricValue) => regionValue + "/" + metricValue)
+    ).to(outputTopicName)
+
+    val outputTopic: KTable[String, String] =
+      builder.table(
+        outputTopicName,
+        Materialized.as(storeName)
+      )
+
+    builder.build()
+  }
+
+  // Not Supported
+  def kStreamToGlobalKTableOuterJoin(inputTopic1: String,
+                                inputTopic2: String,
+                                outputTopicName: String,
+                                storeName: String): Topology = {
+
+    new StreamsBuilder().build()
   }
 }

@@ -1,9 +1,11 @@
 package com.supergloo
 
+import java.time.Duration
 import java.util.Properties
+import java.util.concurrent.TimeUnit
 
 import org.apache.kafka.streams.{StreamsConfig, Topology}
-import org.apache.kafka.streams.kstream.Materialized
+import org.apache.kafka.streams.kstream.{JoinWindows, Materialized}
 import org.apache.kafka.streams.scala.ImplicitConversions._
 import org.apache.kafka.streams.scala.{Serdes, StreamsBuilder}
 import org.apache.kafka.streams.scala.kstream.{KStream, KTable}
@@ -87,4 +89,110 @@ object KafkaStreamsJoins {
     builder.build()
   }
 
+  def kStreamToKTableLeftJoin(inputTopic1: String,
+                          inputTopic2: String,
+                          outputTopicName: String,
+                          storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: KTable[String, String] = builder.table(inputTopic1)
+    val regionMetrics: KStream[String, Long] = builder.stream(inputTopic2)
+
+    regionMetrics.leftJoin(userRegions){(regionValue, metricValue) =>
+      regionValue + "/" + metricValue
+    }.to(outputTopicName)
+
+    val outputTopic: KTable[String, String] =
+      builder.table(
+        outputTopicName,
+        Materialized.as(storeName)
+      )
+
+    builder.build()
+  }
+
+  def kStreamToKTableOuterJoin(inputTopic1: String,
+                              inputTopic2: String,
+                              outputTopicName: String,
+                              storeName: String): Topology = {
+
+    // N/A - KStream to KTable is not supported
+    new StreamsBuilder().build()
+  }
+
+
+  // -------- KStream to KStream joins ------------//
+
+  def kStreamToKStreamJoin(inputTopic1: String,
+                              inputTopic2: String,
+                              outputTopicName: String,
+                              storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: KStream[String, String] = builder.stream(inputTopic1)
+    val regionMetrics: KStream[String, Long] = builder.stream(inputTopic2)
+
+    regionMetrics.join(userRegions)(
+      ((regionValue, metricValue) => regionValue + "/" + metricValue),
+      JoinWindows.of(Duration.ofMinutes(5L))
+    ).to(outputTopicName)
+
+    val outputTopic: KTable[String, String] =
+      builder.table(
+        outputTopicName,
+        Materialized.as(storeName)
+      )
+
+    builder.build()
+  }
+
+  def kStreamToKStreamLeftJoin(inputTopic1: String,
+                           inputTopic2: String,
+                           outputTopicName: String,
+                           storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: KStream[String, String] = builder.stream(inputTopic1)
+    val regionMetrics: KStream[String, Long] = builder.stream(inputTopic2)
+
+    regionMetrics.leftJoin(userRegions)(
+      ((regionValue, metricValue) => regionValue + "/" + metricValue),
+      JoinWindows.of(Duration.ofMinutes(5L))
+    ).to(outputTopicName)
+
+    val outputTopic: KTable[String, String] =
+      builder.table(
+        outputTopicName,
+        Materialized.as(storeName)
+      )
+
+    builder.build()
+  }
+
+  def kStreamToKStreamOuterJoin(inputTopic1: String,
+                               inputTopic2: String,
+                               outputTopicName: String,
+                               storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val userRegions: KStream[String, String] = builder.stream(inputTopic1)
+    val regionMetrics: KStream[String, Long] = builder.stream(inputTopic2)
+
+    regionMetrics.outerJoin(userRegions)(
+      ((regionValue, metricValue) => regionValue + "/" + metricValue),
+      JoinWindows.of(Duration.ofMinutes(5L))
+    ).to(outputTopicName)
+
+    val outputTopic: KTable[String, String] =
+      builder.table(
+        outputTopicName,
+        Materialized.as(storeName)
+      )
+
+    builder.build()
+  }
 }

@@ -129,5 +129,102 @@ class KafkaStreamsJoinsSpec extends FlatSpec with Matchers with KafkaTestSetup {
     driver.close()
   }
 
-  // TODO - left and outers of KStream to KTable Joins
+  "KStream to KTable left join" should "save expected results to state store" in {
+
+    val driver = new TopologyTestDriver(
+      KafkaStreamsJoins.kStreamToKTableLeftJoin(inputTopicOne,
+        inputTopicTwo,
+        outputTopic, stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+    driver.pipeInput(recordFactoryTwo.create(inputTopicTwo, sensorMetric))
+
+    // Perform tests
+    val store: KeyValueStore[String, String] = driver.getKeyValueStore(stateStore)
+
+    store.get("sensor-1") shouldBe "99/MN"
+    store.get("sensor-3-in-topic-one") shouldBe null
+    store.get("sensor-99-in-topic-two") shouldBe "1/null"
+    store.get("sensor-100-in-topic-two") shouldBe "100/null"
+
+    driver.close()
+  }
+
+  // KStream to KTable outer join is not supported
+
+  // -------  KStream to KStream Joins ------------ //
+
+  "KStream to KStream inner join" should "save expected results to state store" in {
+
+    val driver = new TopologyTestDriver(
+      KafkaStreamsJoins.kStreamToKStreamJoin(inputTopicOne,
+        inputTopicTwo,
+        outputTopic, stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+    driver.pipeInput(recordFactoryTwo.create(inputTopicTwo, sensorMetric))
+
+    // Perform tests
+    val store: KeyValueStore[String, String] = driver.getKeyValueStore(stateStore)
+
+    store.get("sensor-1") shouldBe "99/MN"
+    store.get("sensor-3-in-topic-one") shouldBe null
+    store.get("sensor-99-in-topic-two") shouldBe null
+
+    driver.close()
+  }
+
+  "KStream to KStream Left join" should "save expected results to state store" in {
+
+    val driver = new TopologyTestDriver(
+      KafkaStreamsJoins.kStreamToKStreamLeftJoin(inputTopicOne,
+        inputTopicTwo,
+        outputTopic, stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+    driver.pipeInput(recordFactoryTwo.create(inputTopicTwo, sensorMetric))
+
+    // Perform tests
+    val store: KeyValueStore[String, String] = driver.getKeyValueStore(stateStore)
+
+    store.get("sensor-1") shouldBe "99/MN"
+    store.get("sensor-3-in-topic-one") shouldBe null
+    store.get("sensor-99-in-topic-two") shouldBe "1/null"
+    store.get("sensor-100-in-topic-two") shouldBe "100/null"
+
+    driver.close()
+  }
+
+  "KStream to KStream Outer join" should "save expected results to state store" in {
+
+    val driver = new TopologyTestDriver(
+      KafkaStreamsJoins.kStreamToKStreamOuterJoin(inputTopicOne,
+        inputTopicTwo,
+        outputTopic, stateStore),
+        config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+    driver.pipeInput(recordFactoryTwo.create(inputTopicTwo, sensorMetric))
+
+    // Perform tests
+    val store: KeyValueStore[String, String] = driver.getKeyValueStore(stateStore)
+
+    store.get("sensor-1") shouldBe "99/MN"
+    store.get("sensor-3-in-topic-one") shouldBe "0/IL"
+    store.get("sensor-99-in-topic-two") shouldBe "1/null"
+    store.get("sensor-100-in-topic-two") shouldBe "100/null"
+
+    driver.close()
+  }
+
+  // -------  KStream to GlobalKTable Joins ------------ //
 }
+// TODO
+

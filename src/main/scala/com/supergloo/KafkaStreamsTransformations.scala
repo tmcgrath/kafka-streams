@@ -19,8 +19,17 @@ object KafkaStreamsTransformations {
     p
   }
 
-  // Split a KStream based on the supplied predicates into one or more KStream instances. (details)
-  // TODO generate api doc with above description once this settles down
+  /**
+    *
+    * Split a KStream based on the supplied predicates into three
+    * KStream instances. We only care about the two input filters though
+    *
+    * @param inputTopic1
+    * @param keyFilter1
+    * @param keyFilter2
+    * @param storeName
+    * @return
+    */
   def kStreamBranch(inputTopic1: String,
                     keyFilter1: String,
                     keyFilter2: String,
@@ -36,17 +45,20 @@ object KafkaStreamsTransformations {
       (key, value) => true
     )
 
-    // TODO - this won't work because hardcoded to fitler1
-    results.foreach((k: KStream[String, String]) =>
-      k.to("${keyFilter1}-topic")
-    )
+    results(0).to(s"${keyFilter1}-topic")
+    results(1).to(s"${keyFilter2}-topic")
 
-    // TODO - have to store in order to test
-//    val outputTopic: KTable[String, String] =
-//      builder.table(
-//        outputTopicName,
-//        Materialized.as(storeName)
-//      )
+    val outputTopicOne: KTable[String, String] =
+      builder.table(
+        s"${keyFilter1}-topic",
+        Materialized.as(s"${keyFilter1}-${storeName}")
+      )
+
+    val outputTopicTwo: KTable[String, String] =
+      builder.table(
+        s"${keyFilter2}-topic",
+        Materialized.as(s"${keyFilter2}-${storeName}")
+      )
 
     builder.build()
   }

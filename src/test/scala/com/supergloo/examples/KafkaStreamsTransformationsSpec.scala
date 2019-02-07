@@ -14,8 +14,8 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
 
     // test fixtures
     val inputTopicOne = "input-topic-1"
-    val inputTopicTwo = "input-topic-2"
-    val outputTopic = "output-topic"
+//    val inputTopicTwo = "input-topic-2"
+//    val outputTopic = "output-topic"
 
     val stateStore = "saved-state"
 
@@ -23,30 +23,31 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
     val userRegions = scala.collection.mutable.Seq[KeyValue[String, String]](
       ("sensor-1", "MN"),
       ("sensor-2", "WI"),
-      ("sensor-3-in-topic-one", "IL")
+      ("sensor-11", "IL")
     ).asJava
 
     // input-topic-2
-    val sensorMetric = scala.collection.mutable.Seq[KeyValue[String, java.lang.Long]](
-      KeyValue.pair("sensor-1", 99L),
-      KeyValue.pair("sensor-2", 1L),
-      KeyValue.pair("sensor-99-in-topic-two", 1L),
-      KeyValue.pair("sensor-100-in-topic-two", 100L)
-    ).asJava
+//    val sensorMetric = scala.collection.mutable.Seq[KeyValue[String, java.lang.Long]](
+//      KeyValue.pair("sensor-1", 99L),
+//      KeyValue.pair("sensor-2", 1L)
+//    ).asJava
 
     val recordFactory = new ConsumerRecordFactory(new StringSerializer(), new StringSerializer())
 
-    val recordFactoryTwo: ConsumerRecordFactory[String, java.lang.Long] =
-      new ConsumerRecordFactory(new StringSerializer(), new LongSerializer())
+//    val recordFactoryTwo: ConsumerRecordFactory[String, java.lang.Long] =
+//      new ConsumerRecordFactory(new StringSerializer(), new LongSerializer())
 
 
     // -------  KTable to KTable Joins ------------ //
-    "KStream join" should "filter streams accordingly" in {
+    "KStream branch" should "branch streams according to filter impl" in {
 
+      val keyFilter1 = "sensor-1"
+      val keyFilter2 = "sensor-2"
+      
       val driver = new TopologyTestDriver(
         KafkaStreamsTransformations.kStreamBranch(inputTopicOne,
-                                                  "sensor",
-                                                  "sadf",
+                                                  keyFilter1,
+                                                  keyFilter2,
                                                   stateStore),
         config
       )
@@ -54,11 +55,14 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
       driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
 
       // Perform tests
-      val store: KeyValueStore[String, String] = driver.getKeyValueStore(stateStore)
+      val storeOne: KeyValueStore[String, String] = driver.getKeyValueStore(s"${keyFilter1}-${stateStore}")
+      val storeTwo: KeyValueStore[String, String] = driver.getKeyValueStore(s"${keyFilter2}-${stateStore}")
 
-      store.get("sensor-1") shouldBe "MN/99"
-      store.get("sensor-3-in-topic-one") shouldBe null
-      store.get("sensor-99-in-topic-two") shouldBe null
+
+      storeOne.get("sensor-1") shouldBe "MN"
+      storeOne.get("sensor-11") shouldBe "IL"
+
+      storeTwo.get("sensor-2") shouldBe "WI"
 
       driver.close()
     }

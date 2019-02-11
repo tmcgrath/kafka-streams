@@ -63,4 +63,61 @@ object KafkaStreamsTransformations {
     builder.build()
   }
 
+  /**
+    * Evaluates a boolean function over each element and keeps only
+    * those which eval to true
+    *
+    * @param inputTopic
+    * @param keyFilter
+    * @param storeName
+    * @return
+    */
+  def kStreamFilter(inputTopic: String,
+                    keyFilter: String,
+                    storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val inputStream: KStream[String, String] = builder.stream(inputTopic)
+
+    inputStream.filter(
+      (key, value) => value == keyFilter
+    ).to(s"${keyFilter}-topic")
+
+    val outputTopicOne: KTable[String, String] =
+      builder.table(
+        s"${keyFilter}-topic",
+        Materialized.as(s"${storeName}")
+      )
+
+    builder.build()
+  }
+
+  def kStreamFlatMap(inputTopic: String,
+                     expanderList: List[String],
+                  storeName: String): Topology = {
+
+    val resultTopic = "flatmap-topic"
+    val builder: StreamsBuilder = new StreamsBuilder
+
+    val inputStream: KStream[String, String] = builder.stream(inputTopic)
+
+    inputStream.flatMap {
+      (key, value) => {
+        expanderList.flatMap { s =>
+          List((s"${s}-${value}", value))
+        }
+      }
+    }
+    .to(resultTopic)
+
+    val outputTopicOne: KTable[String, String] =
+      builder.table(
+        resultTopic,
+        Materialized.as(s"${storeName}")
+      )
+
+    builder.build()
+  }
+
 }

@@ -38,32 +38,78 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
 //      new ConsumerRecordFactory(new StringSerializer(), new LongSerializer())
 
 
-    // -------  KTable to KTable Joins ------------ //
-    "KStream branch" should "branch streams according to filter impl" in {
+  // -------  Kafka Streams Transformation Examples ------------ //
+  "KStream branch" should "branch streams according to filter impl" in {
 
-      val keyFilter1 = "sensor-1"
-      val keyFilter2 = "sensor-2"
-      
-      val driver = new TopologyTestDriver(
-        KafkaStreamsTransformations.kStreamBranch(inputTopicOne,
-                                                  keyFilter1,
-                                                  keyFilter2,
-                                                  stateStore),
-        config
-      )
+    val keyFilter1 = "sensor-1"
+    val keyFilter2 = "sensor-2"
 
-      driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+    val driver = new TopologyTestDriver(
+      KafkaStreamsTransformations.kStreamBranch(inputTopicOne,
+                                                keyFilter1,
+                                                keyFilter2,
+                                                stateStore),
+      config
+    )
 
-      // Perform tests
-      val storeOne: KeyValueStore[String, String] = driver.getKeyValueStore(s"${keyFilter1}-${stateStore}")
-      val storeTwo: KeyValueStore[String, String] = driver.getKeyValueStore(s"${keyFilter2}-${stateStore}")
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+
+    // Perform tests
+    val storeOne: KeyValueStore[String, String] = driver.getKeyValueStore(s"${keyFilter1}-${stateStore}")
+    val storeTwo: KeyValueStore[String, String] = driver.getKeyValueStore(s"${keyFilter2}-${stateStore}")
 
 
-      storeOne.get("sensor-1") shouldBe "MN"
-      storeOne.get("sensor-11") shouldBe "IL"
+    storeOne.get("sensor-1") shouldBe "MN"
+    storeOne.get("sensor-11") shouldBe "IL"
 
-      storeTwo.get("sensor-2") shouldBe "WI"
+    storeTwo.get("sensor-2") shouldBe "WI"
 
-      driver.close()
+    driver.close()
+  }
+
+  "KStream filter" should "filter streams according designated filter" in {
+
+    val valFilter = "MN"
+    val driver = new TopologyTestDriver(
+      KafkaStreamsTransformations.kStreamFilter(inputTopicOne,
+        valFilter,
+        stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+
+    // Perform tests
+    val storeOne: KeyValueStore[String, String] = driver.getKeyValueStore(s"${stateStore}")
+
+    storeOne.get("sensor-1") shouldBe valFilter
+    storeOne.get("sensor-2") shouldBe null
+    storeOne.get("sensor-11") shouldBe null
+
+    driver.close()
+  }
+
+  "KStream flatMap" should "update streams according flatMap impl" in {
+
+    val valFilter = "MN"
+    val flatMappen = List("temp", "location", "codename")
+    val driver = new TopologyTestDriver(
+      KafkaStreamsTransformations.kStreamFlatMap(inputTopicOne,
+        flatMappen,
+        stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+
+    // Perform tests
+    val storeOne: KeyValueStore[String, String] = driver.getKeyValueStore(s"${stateStore}")
+
+    // just MN, not tesing for WI or IL
+    flatMappen.foreach { s =>
+      storeOne.get(s"${s}-${valFilter}") shouldBe valFilter
     }
+
+    driver.close()
+  }
 }

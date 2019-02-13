@@ -112,4 +112,24 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
 
     driver.close()
   }
+
+  "KStream map" should "update streams according map impl" in {
+    
+    val driver = new TopologyTestDriver(
+      KafkaStreamsTransformations.kStreamMap(inputTopicOne,
+        stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, userRegions))
+
+    // Perform tests
+    val storeOne: KeyValueStore[String, String] = driver.getKeyValueStore(s"${stateStore}")
+
+    storeOne.get("sensor-1") shouldBe "MN-new"
+    storeOne.get("sensor-2") shouldBe "WI-new"
+    storeOne.get("sensor-11") shouldBe "IL-new"
+
+    driver.close()
+  }
 }

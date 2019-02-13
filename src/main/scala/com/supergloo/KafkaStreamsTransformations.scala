@@ -2,6 +2,7 @@ package com.supergloo
 
 import java.util.Properties
 
+import org.apache.kafka.common.serialization.Serde
 import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.{StreamsConfig, Topology}
 import org.apache.kafka.streams.scala.ImplicitConversions._
@@ -93,6 +94,15 @@ object KafkaStreamsTransformations {
     builder.build()
   }
 
+  /**
+    * Takes one record and produces zero, one, or more records.
+    * In this impl, create new records for each item in `expanderList`
+    *
+    * @param inputTopic
+    * @param expanderList
+    * @param storeName
+    * @return
+    */
   def kStreamFlatMap(inputTopic: String,
                      expanderList: List[String],
                   storeName: String): Topology = {
@@ -110,6 +120,26 @@ object KafkaStreamsTransformations {
       }
     }
     .to(resultTopic)
+
+    val outputTopicOne: KTable[String, String] =
+      builder.table(
+        resultTopic,
+        Materialized.as(s"${storeName}")
+      )
+
+    builder.build()
+  }
+
+  def kStreamMap(inputTopic: String,
+                     storeName: String): Topology = {
+
+    val resultTopic = "map-topic"
+    val builder: StreamsBuilder = new StreamsBuilder
+    val inputStream: KStream[String, String] = builder.stream(inputTopic)
+
+    val outputStream = inputStream.map {
+      (key, value) => (key, s"${value}-new")
+      }.to(resultTopic)
 
     val outputTopicOne: KTable[String, String] =
       builder.table(

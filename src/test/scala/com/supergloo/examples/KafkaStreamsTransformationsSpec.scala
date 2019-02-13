@@ -114,7 +114,7 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
   }
 
   "KStream map" should "update streams according map impl" in {
-    
+
     val driver = new TopologyTestDriver(
       KafkaStreamsTransformations.kStreamMap(inputTopicOne,
         stateStore),
@@ -129,6 +129,32 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
     storeOne.get("sensor-1") shouldBe "MN-new"
     storeOne.get("sensor-2") shouldBe "WI-new"
     storeOne.get("sensor-11") shouldBe "IL-new"
+
+    driver.close()
+  }
+
+  "KStream groupBy" should "group values accordingly" in {
+
+    val newRegions = scala.collection.mutable.Seq[KeyValue[String, String]](
+      ("sensor-1", "MN"),
+      ("sensor-2", "WI"),
+      ("sensor-12", "MN"),
+      ("sensor-11", "IL")
+    ).asJava
+
+    val driver = new TopologyTestDriver(
+      KafkaStreamsTransformations.kStreamGroupBy(inputTopicOne,
+        stateStore),
+      config
+    )
+
+    driver.pipeInput(recordFactory.create(inputTopicOne, newRegions))
+
+    // Perform tests
+    val storeOne: KeyValueStore[String, Long] = driver.getKeyValueStore(s"${stateStore}")
+
+    storeOne.get("MN") shouldBe 2
+    storeOne.get("WI") shouldBe 1
 
     driver.close()
   }

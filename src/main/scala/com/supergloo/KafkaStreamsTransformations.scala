@@ -3,7 +3,7 @@ package com.supergloo
 import java.util.Properties
 
 import org.apache.kafka.common.serialization.Serde
-import org.apache.kafka.streams.kstream.Materialized
+import org.apache.kafka.streams.kstream.{Grouped, KGroupedStream, Materialized}
 import org.apache.kafka.streams.{StreamsConfig, Topology}
 import org.apache.kafka.streams.scala.ImplicitConversions._
 import org.apache.kafka.streams.scala.{Serdes, StreamsBuilder}
@@ -146,6 +146,19 @@ object KafkaStreamsTransformations {
         resultTopic,
         Materialized.as(s"${storeName}")
       )
+
+    builder.build()
+  }
+
+  def kStreamGroupBy(inputTopic: String,
+                 storeName: String): Topology = {
+
+    val builder: StreamsBuilder = new StreamsBuilder
+    val inputStream: KStream[String, String] = builder.stream(inputTopic)
+
+    inputStream.groupBy {
+      (key, value) => value
+    }.count()(Materialized.as(s"${storeName}"))
 
     builder.build()
   }

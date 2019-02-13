@@ -20,3 +20,16 @@ joining topics in Kafka Streams.
 
 More [https://www.supergloo.com/fieldnotes/kafka-streams-joins-examples/](https://www.supergloo.com/fieldnotes/kafka-streams-joins-examples/)
 
+#### Kafka Streams Transformations
+
+For those of you coming from Apache Spark or Scala, transformations such
+as `map` or `flatMap` will seem just like you expect.  But, for those of you
+possibly new to Kafka Streams and no previous experience in Spark and/or Scala, this
+tutorial and source code may be helpful 
+
+More at [Kafka Streams Transformations Tutorial](https://www.supergloo.com/fieldnotes/kafka-streams-transformation-examples/)
+
+
+#### What else?
+
+Let me know

@@ -1,7 +1,7 @@
 package com.supergloo.examples
 
-import com.supergloo.{KafkaStreamsJoins, KafkaStreamsTransformations}
-import org.apache.kafka.common.serialization.{LongSerializer, StringSerializer}
+import com.supergloo.KafkaStreamsTransformations
+import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.streams.{KeyValue, TopologyTestDriver}
 import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.test.ConsumerRecordFactory
@@ -14,8 +14,6 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
 
     // test fixtures
     val inputTopicOne = "input-topic-1"
-//    val inputTopicTwo = "input-topic-2"
-//    val outputTopic = "output-topic"
 
     val stateStore = "saved-state"
 
@@ -26,17 +24,7 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
       ("sensor-11", "IL")
     ).asJava
 
-    // input-topic-2
-//    val sensorMetric = scala.collection.mutable.Seq[KeyValue[String, java.lang.Long]](
-//      KeyValue.pair("sensor-1", 99L),
-//      KeyValue.pair("sensor-2", 1L)
-//    ).asJava
-
     val recordFactory = new ConsumerRecordFactory(new StringSerializer(), new StringSerializer())
-
-//    val recordFactoryTwo: ConsumerRecordFactory[String, java.lang.Long] =
-//      new ConsumerRecordFactory(new StringSerializer(), new LongSerializer())
-
 
   // -------  Kafka Streams Transformation Examples ------------ //
   "KStream branch" should "branch streams according to filter impl" in {
@@ -61,7 +49,6 @@ class KafkaStreamsTransformationsSpec extends FlatSpec with Matchers with KafkaT
 
     storeOne.get("sensor-1") shouldBe "MN"
     storeOne.get("sensor-11") shouldBe "IL"
-
     storeTwo.get("sensor-2") shouldBe "WI"
 
     driver.close()

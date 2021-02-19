@@ -6,9 +6,10 @@ import org.apache.kafka.common.serialization.{StringDeserializer, StringSerializ
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.test.ConsumerRecordFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should._
+import org.scalatest.flatspec.AnyFlatSpec
 
-class WordCountTestableSpec extends FlatSpec with Matchers with KafkaTestSetup {
+class WordCountTestableSpec extends AnyFlatSpec with Matchers with KafkaTestSetup {
 
   val wordCountApplication = new WordCountTestable
 
@@ -27,12 +28,12 @@ class WordCountTestableSpec extends FlatSpec with Matchers with KafkaTestSetup {
     val recordFactory = new ConsumerRecordFactory("input-topic", new StringSerializer(), new StringSerializer())
     val words = "Hello Kafka Streams, All streams lead to Kafka"
     driver.pipeInput(recordFactory.create(words))
-    val store: KeyValueStore[String, java.lang.Long] = driver.getKeyValueStore("counts-store")
+    val store: KeyValueStore[String, java.lang.Long] = driver.getKeyValueStore("counts-store")    
     store.get("hello") shouldBe 1
     store.get("kafka") shouldBe 2
     store.get("streams") shouldBe 2
     store.get("lead") shouldBe 1
-    store.get("to") shouldBe 1
+    store.get("to") shouldBe 1    
     driver.close()
 
   }

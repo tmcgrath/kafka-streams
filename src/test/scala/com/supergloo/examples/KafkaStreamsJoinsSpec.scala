@@ -5,9 +5,10 @@ import org.apache.kafka.common.serialization.{LongSerializer, StringSerializer}
 import org.apache.kafka.streams.state.KeyValueStore
 import org.apache.kafka.streams.{KeyValue, TopologyTestDriver}
 import org.apache.kafka.streams.test.ConsumerRecordFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.matchers.should._
+import org.scalatest.flatspec.AnyFlatSpec
 
-class KafkaStreamsJoinsSpec extends FlatSpec with Matchers with KafkaTestSetup {
+class KafkaStreamsJoinsSpec extends AnyFlatSpec with Matchers with KafkaTestSetup {
 
   import org.apache.kafka.streams.scala.ImplicitConversions._
   import collection.JavaConverters._
